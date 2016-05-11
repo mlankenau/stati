@@ -8,7 +8,43 @@ defmodule Stati do
   """
   defmacro change(param, val) do
     plan = parse(param)
-    code = generate(plan, val, [])
+    final_op = fn(m, s, val, path) ->
+      "%{ #{generate_path(path)}#{m} | #{s}: #{val}}"
+    end
+    code = generate(plan, val, [], final_op)
+    Code.string_to_quoted(code) |> elem(1)
+  end
+
+  @doc ~S"""
+    add a element to the head of a list in an hierarchie of maps
+
+    iex> mymap = %{ childmap: %{ other_val: 'foo', list: [4]} }
+    iex> Stati.add_head(mymap.childmap.list, 5)
+    %{childmap: %{ other_val: 'foo', list: [5, 4]}}
+  """
+  defmacro add_head(param, val) do
+    plan = parse(param)
+    final_op = fn(m, s, val, path) ->
+      "%{ #{generate_path(path)}#{m} | #{s}: [#{val} | #{generate_path(path)}#{m}.#{s}]}"
+    end
+    code = generate(plan, val, [], final_op)
+    Code.string_to_quoted(code) |> elem(1)
+  end
+
+  @doc ~S"""
+    add a element to the head of a list in an hierarchie of maps
+
+    iex> mymap = %{ childmap: %{ other_val: 'foo', list: [4]} }
+    iex> Stati.delete_key(mymap.childmap.list)
+    %{childmap: %{ other_val: 'foo'}}
+  """
+  defmacro delete_key(param) do
+    plan = parse(param)
+    final_op = fn(m, s, _val, path) ->
+      "Map.delete(#{generate_path(path)}#{m}, :#{s})"
+    end
+    code = generate(plan, nil, [], final_op)
+    IO.puts code
     Code.string_to_quoted(code) |> elem(1)
   end
 
@@ -35,11 +71,11 @@ defmodule Stati do
     "#{generate_path(t)}#{h}."
   end
 
-  defp generate([m, s], val, path) do
-    "%{ #{generate_path(path)} #{m} | #{s}: #{val}}"
+  defp generate([m, s], val, path, final_op) do
+    final_op.(m, s, val, path)
   end
 
-  defp generate([m, s | t], val, path) do
-    "%{ #{generate_path(path)}#{m} | #{s}: #{generate([s|t], val, [m | path] )} }"
+  defp generate([m, s | t], val, path, final_op) do
+    "%{ #{generate_path(path)}#{m} | #{s}: #{generate([s|t], val, [m | path], final_op)} }"
   end
 end

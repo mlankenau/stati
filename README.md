@@ -15,13 +15,12 @@ and you want to change the password to "BAR" then you would normally do
   ${state | user: %{ state.user | password: "BAR" }}
 ```
 
-which is kind of ugly and becomes even worse if you have more levels.
+which is kind of ugly and becomes even worse if you have more levels. With Stati
+it is done by
 
 ```elixir
   Stati.change(state.user.password, "BAR")
 ```
-
-Right now that only works with maps. Plan is to support lists as well.
 
 ## Installation
 
