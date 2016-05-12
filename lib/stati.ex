@@ -10,6 +10,10 @@ defmodule Stati do
     iex> Stati.change(mymap.childmap.val | 0)
     %{childmap: %{ other_val: 'foo', val: [0,1,2,3]}}
 
+    iex> mymap = %{ childmap: %{ other_val: 'foo', val: [1,2,3]} }
+    iex> Stati.change(mymap.childmap.val ++ [0])
+    %{childmap: %{ other_val: 'foo', val: [1,2,3,0]}}
+
     iex> mymap = %{ childmap: %{ other_val: 'foo', list: [4]} }
     iex> Stati.change(mymap.childmap -- :list)
     %{childmap: %{ other_val: 'foo'}}
@@ -33,6 +37,14 @@ defmodule Stati do
           path,
           val,
           fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: Map.delete(#{generate_path(path)}#{m}.#{s}, :#{val})}" end
+        }
+      {:++, _, [path, val]} ->
+        {
+          path,
+          val,
+          fn(m, s, val, path) ->
+            "%{ #{generate_path(path)}#{m} | #{s}: (#{generate_path(path)}#{m}.#{s} ++ #{Macro.to_string val})}"
+          end
         }
     end
     plan = parse(path)
