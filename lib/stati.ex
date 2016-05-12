@@ -24,13 +24,13 @@ defmodule Stati do
         {
           path,
           val,
-          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: #{val}}" end
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: #{Macro.to_string val}}" end
         }
       {:|, _, [path, val]} ->
         {
           path,
           val,
-          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: [#{val} | #{generate_path(path)}#{m}.#{s}]}" end
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: [#{Macro.to_string val} | #{generate_path(path)}#{m}.#{s}]}" end
         }
       {:--, _, [path, val]} ->
         {
