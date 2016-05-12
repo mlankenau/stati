@@ -3,50 +3,43 @@ defmodule Stati do
     change an element in an hierarchie of maps
 
     iex> mymap = %{ childmap: %{ other_val: 'foo', val: 4} }
-    iex> Stati.change(mymap.childmap.val, 5)
+    iex> Stati.change(mymap.childmap.val = 5)
     %{childmap: %{ other_val: 'foo', val: 5}}
-  """
-  defmacro change(param, val) do
-    plan = parse(param)
-    final_op = fn(m, s, val, path) ->
-      "%{ #{generate_path(path)}#{m} | #{s}: #{val}}"
-    end
-    code = generate(plan, val, [], final_op)
-    Code.string_to_quoted(code) |> elem(1)
-  end
 
-  @doc ~S"""
-    add a element to the head of a list in an hierarchie of maps
+    iex> mymap = %{ childmap: %{ other_val: 'foo', val: [1,2,3]} }
+    iex> Stati.change(mymap.childmap.val | 0)
+    %{childmap: %{ other_val: 'foo', val: [0,1,2,3]}}
 
     iex> mymap = %{ childmap: %{ other_val: 'foo', list: [4]} }
-    iex> Stati.add_head(mymap.childmap.list, 5)
-    %{childmap: %{ other_val: 'foo', list: [5, 4]}}
-  """
-  defmacro add_head(param, val) do
-    plan = parse(param)
-    final_op = fn(m, s, val, path) ->
-      "%{ #{generate_path(path)}#{m} | #{s}: [#{val} | #{generate_path(path)}#{m}.#{s}]}"
-    end
-    code = generate(plan, val, [], final_op)
-    Code.string_to_quoted(code) |> elem(1)
-  end
-
-  @doc ~S"""
-    add a element to the head of a list in an hierarchie of maps
-
-    iex> mymap = %{ childmap: %{ other_val: 'foo', list: [4]} }
-    iex> Stati.delete_key(mymap.childmap.list)
+    iex> Stati.change(mymap.childmap -- :list)
     %{childmap: %{ other_val: 'foo'}}
   """
-  defmacro delete_key(param) do
-    plan = parse(param)
-    final_op = fn(m, s, _val, path) ->
-      "Map.delete(#{generate_path(path)}#{m}, :#{s})"
+  defmacro change(cmd) do
+    {path, val, op} = case cmd do
+      {:=, _, [path, val]} ->
+        {
+          path,
+          val,
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: #{val}}" end
+        }
+      {:|, _, [path, val]} ->
+        {
+          path,
+          val,
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: [#{val} | #{generate_path(path)}#{m}.#{s}]}" end
+        }
+      {:--, _, [path, val]} ->
+        {
+          path,
+          val,
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: Map.delete(#{generate_path(path)}#{m}.#{s}, :#{val})}" end
+        }
     end
-    code = generate(plan, nil, [], final_op)
-    IO.puts code
+    plan = parse(path)
+    code = generate(plan, val, [], op)
     Code.string_to_quoted(code) |> elem(1)
   end
+
 
   @doc ~S"""
     parse the syntax-tree and create a list of accessors

@@ -19,7 +19,7 @@ which is kind of ugly and becomes even worse if you have more levels. With Stati
 it is done by
 
 ```elixir
-  Stati.change(state.user.password, "BAR")
+  Stati.change(state.user.password = "BAR")
 ```
 
 ## Installation
