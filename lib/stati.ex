@@ -36,7 +36,7 @@ defmodule Stati do
         {
           path,
           val,
-          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: Map.delete(#{generate_path(path)}#{m}.#{s}, #{Macro.to_string val})}" end
+          fn(m, s, val, path) -> "%{ #{generate_path(path)}#{m} | #{s}: Elixir.Map.delete(#{generate_path(path)}#{m}.#{s}, #{Macro.to_string val})}" end
         }
       {:++, _, [path, val]} ->
         {
